@@ -41,6 +41,7 @@ public class Builder
     public static final boolean IS_MAC = System.getProperty( "os.name" ).startsWith( "Mac" );
     public static final File CWD = new File( "." );
     public static final String MC_VERSION = "1.8";
+    private static final File jacobeDir = new File( "jacobe" );
 
     public static void main(String[] args) throws Exception
     {
@@ -102,6 +103,12 @@ public class Builder
         if ( !buildData.exists() )
         {
             clone( "https://hub.spigotmc.org/stash/scm/spigot/builddata.git", buildData );
+        }
+
+        if ( !jacobeDir.exists() )
+        {
+            System.out.println( "Jacobe does not exist, downloading" );
+            getJacobe();
         }
 
         File maven = new File( "apache-maven-3.2.3" );
@@ -189,7 +196,7 @@ public class Builder
 
             runProcess( "java -jar BuildData/bin/fernflower.jar -dgs=1 -hdc=0 -rbr=0 -asc=1 " + clazzDir + " " + decompileDir, CWD );
 
-            String jacobePath = "BuildData/bin/jacobe";
+            String jacobePath = jacobeDir.getPath() + "/jacobe";
             if ( IS_WINDOWS )
             {
                 jacobePath += ".exe";
@@ -266,6 +273,23 @@ public class Builder
         {
             System.err.println( "Error compiling Spigot, are you running this jar via msysgit?" );
             ex.printStackTrace();
+        }
+    }
+
+    public static void getJacobe() throws Exception
+    {
+        if ( IS_WINDOWS )
+        {
+            File jacobeWindows = new File( "jacobe.win32.zip" );
+            download( "http://www.tiobe.com/content/products/jacobe/jacobe.win32.zip", jacobeWindows );
+            unzip( jacobeWindows, jacobeDir );
+        } else
+        {
+            File jacobeLinux = new File( "jacobe.linux.tar.gz" );
+            download( "http://www.tiobe.com/content/products/jacobe/jacobe.linux.tar.gz", jacobeLinux );
+
+            jacobeDir.mkdir();
+            runProcess( "tar xzvf " + jacobeLinux.getPath() + " -C " + jacobeDir.getPath(), CWD );
         }
     }
 
