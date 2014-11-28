@@ -49,7 +49,7 @@ public class Builder
         {
             System.out.println( "Sorry, but Macintosh is not currently a supported platform for compilation at this time." );
             System.out.println( "Please run this script on a Windows or Linux PC and then copy the jars to this computer." );
-            return;
+            System.exit( 1 );
         }
 
         try
@@ -58,7 +58,7 @@ public class Builder
         } catch ( Exception ex )
         {
             System.out.println( "You must run this jar through bash (msysgit)" );
-            return;
+            System.exit( 1 );
         }
 
         try
@@ -273,6 +273,7 @@ public class Builder
         {
             System.err.println( "Error compiling Spigot, are you running this jar via msysgit?" );
             ex.printStackTrace();
+            System.exit( 1 );
         }
     }
 
