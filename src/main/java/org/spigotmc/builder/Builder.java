@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
@@ -54,7 +55,7 @@ public class Builder
 
         try
         {
-            runProcess( "bash -c exit", CWD );
+            runProcess( CWD, "bash", "-c", "exit" );
         } catch ( Exception ex )
         {
             System.out.println( "You must run this jar through bash (msysgit)" );
@@ -63,19 +64,19 @@ public class Builder
 
         try
         {
-            runProcess( "git config --global user.name", CWD );
+            runProcess( CWD, "git", "config", "--global", "user.name" );
         } catch ( Exception ex )
         {
             System.out.println( "Git name not set, setting it to default value." );
-            runProcess( "git config --global user.name BuildTools", CWD );
+            runProcess( CWD, "git", "config", "--global", "user.name", "BuildTools" );
         }
         try
         {
-            runProcess( "git config --global user.email", CWD );
+            runProcess( CWD, "git", "config", "--global", "user.email" );
         } catch ( Exception ex )
         {
             System.out.println( "Git email not set, setting it to default value." );
-            runProcess( "git config --global user.email unconfigured@null.spigotmc.org", CWD );
+            runProcess( CWD, "git", "config", "--global", "user.email", "unconfigured@null.spigotmc.org" );
         }
 
         File workDir = new File( "work" );
@@ -123,14 +124,7 @@ public class Builder
             unzip( mvnTemp, new File( "." ) );
         }
 
-        String mvnCmd = maven.getAbsolutePath() + "/bin/mvn";
-        if ( IS_WINDOWS )
-        {
-            mvnCmd += ".bat";
-        } else
-        {
-            mvnCmd = "/bin/sh " + mvnCmd;
-        }
+        String mvn = maven.getAbsolutePath() + "/bin/mvn";
 
         Git bukkitGit = Git.open( bukkit );
         Git craftBukkitGit = Git.open( craftBukkit );
@@ -170,13 +164,17 @@ public class Builder
             File clMappedJar = new File( finalMappedJar + "-cl" );
             File mMappedJar = new File( finalMappedJar + "-m" );
 
-            runProcess( "java -jar BuildData/bin/SpecialSource.jar -i " + vanillaJar + " -m BuildData/mappings/bukkit-1.8-cl.csrg -o " + clMappedJar, CWD );
-            runProcess( "java -jar BuildData/bin/SpecialSource-2.jar map -i " + clMappedJar + " -m " + "BuildData/mappings/bukkit-1.8-members.csrg -o " + mMappedJar, CWD );
-            runProcess( "java -jar BuildData/bin/SpecialSource.jar -i " + mMappedJar + " --access-transformer BuildData/mappings/bukkit-1.8.at "
-                    + "-m BuildData/mappings/package.srg -o " + finalMappedJar, CWD );
+            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource.jar", "-i", vanillaJar.getPath(), "-m", "BuildData/mappings/bukkit-1.8-cl.csrg", "-o", clMappedJar.getPath() );
+
+            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource-2.jar", "map", "-i", clMappedJar.getPath(),
+                    "-m", "BuildData/mappings/bukkit-1.8-members.csrg", "-o", mMappedJar.getPath() );
+
+            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource.jar", "-i", mMappedJar.getPath(), "--access-transformer", "BuildData/mappings/bukkit-1.8.at",
+                    "-m", "BuildData/mappings/package.srg", "-o", finalMappedJar.getPath() );
         }
 
-        runProcess( mvnCmd + " install:install-file -Dfile=" + finalMappedJar + " -Dpackaging=jar -DgroupId=org.spigotmc -DartifactId=minecraft-server -Dversion=1.8-SNAPSHOT", CWD );
+        runProcess( CWD, "sh", mvn, "install:install-file", "-Dfile=" + finalMappedJar, "-Dpackaging=jar", "-DgroupId=org.spigotmc",
+                "-DartifactId=minecraft-server", "-Dversion=1.8-SNAPSHOT" );
 
         File decompileDir = new File( workDir, "decompile-" + mappingsVersion );
         if ( !decompileDir.exists() )
@@ -194,14 +192,14 @@ public class Builder
                 }
             } );
 
-            runProcess( "java -jar BuildData/bin/fernflower.jar -dgs=1 -hdc=0 -rbr=0 -asc=1 " + clazzDir + " " + decompileDir, CWD );
+            runProcess( CWD, "java", "-jar", "BuildData/bin/fernflower.jar", "-dgs=1", "-hdc=0", "-rbr=0", "-asc=1", clazzDir.getPath(), decompileDir.getPath() );
 
             String jacobePath = jacobeDir.getPath() + "/jacobe";
             if ( IS_WINDOWS )
             {
                 jacobePath += ".exe";
             }
-            runProcess( jacobePath + " -cfg=BuildData/bin/jacobe.cfg -nobackup -overwrite -outext=java " + decompileDir + "/net/minecraft/server", CWD );
+            runProcess( CWD, jacobePath, "-cfg=BuildData/bin/jacobe.cfg", "-nobackup", "-overwrite", "-outext=java", decompileDir + "/net/minecraft/server" );
         }
 
         System.out.println( "Applying CraftBukkit Patches" );
@@ -258,17 +256,17 @@ public class Builder
         // Git spigotApiGit = Git.open( spigotApi );
         // Git spigotServerGit = Git.open( spigotServer );
         System.out.println( "Compiling Bukkit" );
-        runProcess( mvnCmd + " clean install", bukkit );
+        runProcess( bukkit, "sh", mvn, "clean", "install" );
 
         System.out.println( "Compiling CraftBukkit" );
-        runProcess( mvnCmd + " clean install", craftBukkit );
+        runProcess( craftBukkit, "sh", mvn, "clean", "install" );
 
         try
         {
-            runProcess( "bash applyPatches.sh", spigot );
+            runProcess( spigot, "bash", "applyPatches.sh" );
             System.out.println( "*** Spigot patches applied!" );
             System.out.println( "Compiling Spigot & Spigot-API" );
-            runProcess( mvnCmd + " clean install", spigot );
+            runProcess( spigot, "sh", mvn, "clean", "install" );
         } catch ( Exception ex )
         {
             System.err.println( "Error compiling Spigot, are you running this jar via msysgit?" );
@@ -290,7 +288,7 @@ public class Builder
             download( "http://www.tiobe.com/content/products/jacobe/jacobe.linux.tar.gz", jacobeLinux );
 
             jacobeDir.mkdir();
-            runProcess( "tar xzvf " + jacobeLinux.getPath() + " -C " + jacobeDir.getPath(), CWD );
+            runProcess( CWD, "tar", "xzvf", jacobeLinux.getPath(), "-C", jacobeDir.getPath() );
         }
     }
 
@@ -309,9 +307,9 @@ public class Builder
         System.out.println( "Successfully pulled updates!" );
     }
 
-    public static int runProcess(String command, File workDir) throws Exception
+    public static int runProcess(File workDir, String... command) throws Exception
     {
-        final Process ps = new ProcessBuilder( command.split( " " ) ).directory( workDir ).start();
+        final Process ps = new ProcessBuilder( command ).directory( workDir ).start();
 
         new Thread( new StreamRedirector( ps.getInputStream(), System.out ) ).start();
         new Thread( new StreamRedirector( ps.getErrorStream(), System.err ) ).start();
@@ -320,7 +318,7 @@ public class Builder
 
         if ( status != 0 )
         {
-            throw new RuntimeException( "Error running command, return status !=0: " + command );
+            throw new RuntimeException( "Error running command, return status !=0: " + Arrays.toString( command ) );
         }
 
         return status;
