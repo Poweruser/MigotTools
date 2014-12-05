@@ -164,7 +164,7 @@ public class Builder
             File clMappedJar = new File( finalMappedJar + "-cl" );
             File mMappedJar = new File( finalMappedJar + "-m" );
 
-            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource.jar", "-i", "vanillaJar", "-m", "BuildData/mappings/bukkit-1.8-cl.csrg", "-o", clMappedJar.getPath() );
+            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource.jar", "-i", vanillaJar.getPath(), "-m", "BuildData/mappings/bukkit-1.8-cl.csrg", "-o", clMappedJar.getPath() );
 
             runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource-2.jar", "map", "-i", clMappedJar.getPath(),
                     "-m", "BuildData/mappings/bukkit-1.8-members.csrg", "-o", mMappedJar.getPath() );

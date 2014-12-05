@@ -32,4 +32,4 @@ manifest.mf
 *.iws
 .idea/
 
-out
+out*
