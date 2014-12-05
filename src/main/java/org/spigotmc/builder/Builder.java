@@ -124,14 +124,7 @@ public class Builder
             unzip( mvnTemp, new File( "." ) );
         }
 
-        String mvnCmd = maven.getAbsolutePath() + "/bin/mvn";
-        if ( IS_WINDOWS )
-        {
-            mvnCmd += ".bat";
-        } else
-        {
-            mvnCmd = "/bin/sh " + mvnCmd;
-        }
+        String mvn = maven.getAbsolutePath() + "/bin/mvn";
 
         Git bukkitGit = Git.open( bukkit );
         Git craftBukkitGit = Git.open( craftBukkit );
@@ -180,7 +173,7 @@ public class Builder
                     "-m", "BuildData/mappings/package.srg", "-o", finalMappedJar.getPath() );
         }
 
-        runProcess( CWD, mvnCmd, "install:install-file", "-Dfile=" + finalMappedJar, "-Dpackaging=jar", "-DgroupId=org.spigotmc",
+        runProcess( CWD, "sh", mvn, "install:install-file", "-Dfile=" + finalMappedJar, "-Dpackaging=jar", "-DgroupId=org.spigotmc",
                 "-DartifactId=minecraft-server", "-Dversion=1.8-SNAPSHOT" );
 
         File decompileDir = new File( workDir, "decompile-" + mappingsVersion );
@@ -263,17 +256,17 @@ public class Builder
         // Git spigotApiGit = Git.open( spigotApi );
         // Git spigotServerGit = Git.open( spigotServer );
         System.out.println( "Compiling Bukkit" );
-        runProcess( bukkit, mvnCmd, "clean", "install" );
+        runProcess( bukkit, "sh", mvn, "clean", "install" );
 
         System.out.println( "Compiling CraftBukkit" );
-        runProcess( craftBukkit, mvnCmd, "clean", "install" );
+        runProcess( craftBukkit, "sh", mvn, "clean", "install" );
 
         try
         {
             runProcess( spigot, "bash", "applyPatches.sh" );
             System.out.println( "*** Spigot patches applied!" );
             System.out.println( "Compiling Spigot & Spigot-API" );
-            runProcess( spigot, mvnCmd, "clean", "install" );
+            runProcess( spigot, "sh", mvn, "clean", "install" );
         } catch ( Exception ex )
         {
             System.err.println( "Error compiling Spigot, are you running this jar via msysgit?" );
