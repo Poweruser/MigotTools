@@ -22,12 +22,21 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -46,6 +55,11 @@ public class Builder
 
     public static void main(String[] args) throws Exception
     {
+        for (String s : args) {
+            if ("--disable-certificate-check".equals(s)) {
+                disableHttpsCertificateCheck();
+            }
+        }
         if ( IS_MAC )
         {
             System.out.println( "Sorry, but Macintosh is not currently a supported platform for compilation at this time." );
@@ -430,5 +444,41 @@ public class Builder
         Files.write( bytes, target );
 
         return target;
+    }
+
+    public static void disableHttpsCertificateCheck() {
+        // This globally disables certificate checking
+        // http://stackoverflow.com/questions/19723415/java-overriding-function-to-disable-ssl-certificate-check
+        try
+        {
+            TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
+            }
+            };
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            
+            HostnameVerifier allHostsValid = new HostnameVerifier() {
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            };
+            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+        } catch ( NoSuchAlgorithmException ex )
+        {
+            System.out.println("Failed to disable https certificate check");
+            ex.printStackTrace(System.out);
+        } catch ( KeyManagementException ex )
+        {
+            System.out.println("Failed to disable https certificate check");
+            ex.printStackTrace(System.out);
+        }
     }
 }
