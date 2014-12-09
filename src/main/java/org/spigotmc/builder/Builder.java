@@ -16,6 +16,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -272,6 +273,29 @@ public class Builder
             System.err.println( "Error compiling Spigot, are you running this jar via msysgit?" );
             ex.printStackTrace();
             System.exit( 1 );
+        }
+
+        for ( int i = 0; i < 35; i++ ) System.out.println( " " );
+        System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
+        copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + MC_VERSION + ".jar" );
+        copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + MC_VERSION + ".jar" );
+    }
+
+    public static void copyJar( String path, final String jarPrefix, String outJarName ) throws Exception
+    {
+        File[] files = new File( path ).listFiles( new FilenameFilter()
+        {
+            @Override
+            public boolean accept( File dir, String name )
+            {
+                return name.startsWith( jarPrefix ) && name.endsWith( ".jar" );
+            }
+        } );
+        for ( File file : files )
+        {
+            System.out.println( "Copying " + file.getName() + " to " + CWD.getAbsolutePath() );
+            Files.copy( file, new File( CWD, outJarName ) );
+            System.out.println( "  - Saved as " + outJarName );
         }
     }
 
