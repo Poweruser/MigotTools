@@ -60,6 +60,7 @@ public class Builder
     public static final String MC_VERSION = "1.8";
     private static final File jacobeDir = new File( "jacobe" );
     private static boolean dontUpdate;
+    private static boolean skipCompile;
 
     public static void main(String[] args) throws Exception
     {
@@ -72,6 +73,10 @@ public class Builder
             if ( "--dont-update".equals( s ) )
             {
                 dontUpdate = true;
+            }
+            if ( "--skip-compile".endsWith( s ) )
+            {
+                skipCompile = true;
             }
         }
 
@@ -289,18 +294,25 @@ public class Builder
 
         // Git spigotApiGit = Git.open( spigotApi );
         // Git spigotServerGit = Git.open( spigotServer );
-        System.out.println( "Compiling Bukkit" );
-        runProcess( bukkit, "sh", mvn, "clean", "install" );
+        if ( !skipCompile )
+        {
+            System.out.println( "Compiling Bukkit" );
+            runProcess( bukkit, "sh", mvn, "clean", "install" );
 
-        System.out.println( "Compiling CraftBukkit" );
-        runProcess( craftBukkit, "sh", mvn, "clean", "install" );
+            System.out.println( "Compiling CraftBukkit" );
+            runProcess( craftBukkit, "sh", mvn, "clean", "install" );
+        }
 
         try
         {
             runProcess( spigot, "bash", "applyPatches.sh" );
             System.out.println( "*** Spigot patches applied!" );
             System.out.println( "Compiling Spigot & Spigot-API" );
-            runProcess( spigot, "sh", mvn, "clean", "install" );
+
+            if ( !skipCompile )
+            {
+                runProcess( spigot, "sh", mvn, "clean", "install" );
+            }
         } catch ( Exception ex )
         {
             System.err.println( "Error compiling Spigot, are you running this jar via msysgit?" );
