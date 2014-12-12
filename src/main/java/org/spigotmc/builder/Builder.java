@@ -53,12 +53,19 @@ public class Builder
     public static final File CWD = new File( "." );
     public static final String MC_VERSION = "1.8";
     private static final File jacobeDir = new File( "jacobe" );
+    private static boolean dontUpdate;
 
     public static void main(String[] args) throws Exception
     {
-        for (String s : args) {
-            if ("--disable-certificate-check".equals(s)) {
+        for ( String s : args )
+        {
+            if ( "--disable-certificate-check".equals( s ) )
+            {
                 disableHttpsCertificateCheck();
+            }
+            if ( "--dont-update".equals( s ) )
+            {
+                dontUpdate = true;
             }
         }
         if ( IS_MAC )
@@ -146,10 +153,13 @@ public class Builder
         Git spigotGit = Git.open( spigot );
         Git buildGit = Git.open( buildData );
 
-        pull( bukkitGit );
-        pull( craftBukkitGit );
-        pull( spigotGit );
-        pull( buildGit );
+        if ( !dontUpdate )
+        {
+            pull( bukkitGit );
+            pull( craftBukkitGit );
+            pull( spigotGit );
+            pull( buildGit );
+        }
 
         File vanillaJar = new File( workDir, "minecraft_server." + MC_VERSION + ".jar" );
         if ( !vanillaJar.exists() )
