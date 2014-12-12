@@ -11,9 +11,12 @@ import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import difflib.DiffUtils;
 import difflib.Patch;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -25,6 +28,7 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Date;
@@ -40,6 +44,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.TeeOutputStream;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -48,6 +53,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 public class Builder
 {
 
+    public static final String LOG_FILE = "BuildTools.log.txt";
     public static final boolean IS_WINDOWS = System.getProperty( "os.name" ).startsWith( "Windows" );
     public static final boolean IS_MAC = System.getProperty( "os.name" ).startsWith( "Mac" );
     public static final File CWD = new File( "." );
@@ -68,6 +74,9 @@ public class Builder
                 dontUpdate = true;
             }
         }
+
+        logOutput();
+
         if ( IS_MAC )
         {
             System.out.println( "Sorry, but Macintosh is not currently a supported platform for compilation at this time." );
@@ -299,18 +308,21 @@ public class Builder
             System.exit( 1 );
         }
 
-        for ( int i = 0; i < 35; i++ ) System.out.println( " " );
+        for ( int i = 0; i < 35; i++ )
+        {
+            System.out.println( " " );
+        }
         System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
         copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + MC_VERSION + ".jar" );
         copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + MC_VERSION + ".jar" );
     }
 
-    public static void copyJar( String path, final String jarPrefix, String outJarName ) throws Exception
+    public static void copyJar(String path, final String jarPrefix, String outJarName) throws Exception
     {
         File[] files = new File( path ).listFiles( new FilenameFilter()
         {
             @Override
-            public boolean accept( File dir, String name )
+            public boolean accept(File dir, String name)
             {
                 return name.startsWith( jarPrefix ) && name.endsWith( ".jar" );
             }
@@ -480,39 +492,88 @@ public class Builder
         return target;
     }
 
-    public static void disableHttpsCertificateCheck() {
+    public static void disableHttpsCertificateCheck()
+    {
         // This globally disables certificate checking
         // http://stackoverflow.com/questions/19723415/java-overriding-function-to-disable-ssl-certificate-check
         try
         {
-            TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
-                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                    return null;
+            TrustManager[] trustAllCerts = new TrustManager[]
+            {
+                new X509TrustManager()
+                {
+                    @Override
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers()
+                    {
+                        return null;
+                    }
+
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] certs, String authType)
+                    {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] certs, String authType)
+                    {
+                    }
                 }
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                }
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                }
-            }
             };
-            SSLContext sc = SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new java.security.SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            
-            HostnameVerifier allHostsValid = new HostnameVerifier() {
-                public boolean verify(String hostname, SSLSession session) {
+
+            // Trust SSL certs
+            SSLContext sc = SSLContext.getInstance( "SSL" );
+            sc.init( null, trustAllCerts, new SecureRandom() );
+            HttpsURLConnection.setDefaultSSLSocketFactory( sc.getSocketFactory() );
+
+            // Trust host names
+            HostnameVerifier allHostsValid = new HostnameVerifier()
+            {
+                @Override
+                public boolean verify(String hostname, SSLSession session)
+                {
                     return true;
                 }
             };
-            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+            HttpsURLConnection.setDefaultHostnameVerifier( allHostsValid );
         } catch ( NoSuchAlgorithmException ex )
         {
-            System.out.println("Failed to disable https certificate check");
-            ex.printStackTrace(System.out);
+            System.out.println( "Failed to disable https certificate check" );
+            ex.printStackTrace( System.err );
         } catch ( KeyManagementException ex )
         {
-            System.out.println("Failed to disable https certificate check");
-            ex.printStackTrace(System.out);
+            System.out.println( "Failed to disable https certificate check" );
+            ex.printStackTrace( System.err );
+        }
+    }
+
+    public static void logOutput()
+    {
+        try
+        {
+            final OutputStream logOut = new BufferedOutputStream( new FileOutputStream( LOG_FILE ) );
+
+            Runtime.getRuntime().addShutdownHook( new Thread()
+            {
+                @Override
+                public void run()
+                {
+                    System.setOut( new PrintStream( new FileOutputStream( FileDescriptor.out ) ) );
+                    System.setErr( new PrintStream( new FileOutputStream( FileDescriptor.err ) ) );
+                    try
+                    {
+                        logOut.close();
+                    } catch ( IOException ex )
+                    {
+                        // We're shutting the jvm down anyway.
+                    }
+                }
+            } );
+
+            System.setOut( new PrintStream( new TeeOutputStream( System.out, logOut ) ) );
+            System.setErr( new PrintStream( new TeeOutputStream( System.err, logOut ) ) );
+        } catch ( FileNotFoundException ex )
+        {
+            System.err.println( "Failed to create log file: " + LOG_FILE );
         }
     }
 }
