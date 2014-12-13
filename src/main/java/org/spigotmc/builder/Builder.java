@@ -478,7 +478,7 @@ public class Builder
 
         try
         {
-            System.out.println( "Cloned git repository " + url + " to " + url + ". Current HEAD: " + commitHash( result ) );
+            System.out.println( "Cloned git repository " + url + " to " + target.getAbsolutePath() + ". Current HEAD: " + commitHash( result ) );
 
         } finally
         {
