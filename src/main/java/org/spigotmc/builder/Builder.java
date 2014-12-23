@@ -58,7 +58,6 @@ public class Builder
     public static final boolean IS_MAC = System.getProperty( "os.name" ).startsWith( "Mac" );
     public static final File CWD = new File( "." );
     public static final String MC_VERSION = "1.8";
-    private static final File jacobeDir = new File( "jacobe" );
     private static boolean dontUpdate;
     private static boolean skipCompile;
 
@@ -82,10 +81,11 @@ public class Builder
 
         logOutput();
 
-        if ( IS_MAC )
+        if ( IS_MAC && !Boolean.getBoolean( "mac.supported" ) )
         {
             System.out.println( "Sorry, but Macintosh is not currently a supported platform for compilation at this time." );
-            System.out.println( "Please run this script on a Windows or Linux PC and then copy the jars to this computer." );
+            System.out.println( "If you feel like testing Macintosh support please run this script with the -Dmac.supported=true option." );
+            System.out.println( "Else please run this script on a Windows or Linux PC and then copy the jars to this computer." );
             System.exit( 1 );
         }
 
@@ -140,12 +140,6 @@ public class Builder
         if ( !buildData.exists() )
         {
             clone( "https://hub.spigotmc.org/stash/scm/spigot/builddata.git", buildData );
-        }
-
-        if ( !jacobeDir.exists() )
-        {
-            System.out.println( "Jacobe does not exist, downloading" );
-            getJacobe();
         }
 
         File maven = new File( "apache-maven-3.2.3" );
@@ -232,13 +226,6 @@ public class Builder
             } );
 
             runProcess( CWD, "java", "-jar", "BuildData/bin/fernflower.jar", "-dgs=1", "-hdc=0", "-rbr=0", "-asc=1", clazzDir.getPath(), decompileDir.getPath() );
-
-            String jacobePath = jacobeDir.getPath() + "/jacobe";
-            if ( IS_WINDOWS )
-            {
-                jacobePath += ".exe";
-            }
-            runProcess( CWD, jacobePath, "-cfg=BuildData/bin/jacobe.cfg", "-nobackup", "-overwrite", "-outext=java", decompileDir + "/net/minecraft/server" );
         }
 
         System.out.println( "Applying CraftBukkit Patches" );
@@ -344,23 +331,6 @@ public class Builder
             System.out.println( "Copying " + file.getName() + " to " + CWD.getAbsolutePath() );
             Files.copy( file, new File( CWD, outJarName ) );
             System.out.println( "  - Saved as " + outJarName );
-        }
-    }
-
-    public static void getJacobe() throws Exception
-    {
-        if ( IS_WINDOWS )
-        {
-            File jacobeWindows = new File( "jacobe.win32.zip" );
-            download( "http://www.tiobe.com/content/products/jacobe/jacobe.win32.zip", jacobeWindows );
-            unzip( jacobeWindows, jacobeDir );
-        } else
-        {
-            File jacobeLinux = new File( "jacobe.linux.tar.gz" );
-            download( "http://www.tiobe.com/content/products/jacobe/jacobe.linux.tar.gz", jacobeLinux );
-
-            jacobeDir.mkdir();
-            runProcess( CWD, "tar", "xzvf", jacobeLinux.getPath(), "-C", jacobeDir.getPath() );
         }
     }
 
