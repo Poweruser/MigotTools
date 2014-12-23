@@ -246,7 +246,24 @@ public class Builder
 
             System.out.println( "Patching with " + file.getName() );
 
-            Patch parsedPatch = DiffUtils.parseUnifiedDiff( Files.readLines( file, Charsets.UTF_8 ) );
+            List<String> readFile = Files.readLines( file, Charsets.UTF_8 );
+
+            // Manually append prelude if it is not found in the first few lines.
+            boolean preludeFound = false;
+            for ( int i = 0; i < Math.min( 3, readFile.size() ); i++ )
+            {
+                if ( readFile.get( i ).startsWith( "+++" ) )
+                {
+                    preludeFound = true;
+                    break;
+                }
+            }
+            if ( !preludeFound )
+            {
+                readFile.add( 0, "+++" );
+            }
+
+            Patch parsedPatch = DiffUtils.parseUnifiedDiff( readFile );
             List<?> modifiedLines = DiffUtils.patch( Files.readLines( clean, Charsets.UTF_8 ), parsedPatch );
 
             BufferedWriter bw = new BufferedWriter( new FileWriter( t ) );
