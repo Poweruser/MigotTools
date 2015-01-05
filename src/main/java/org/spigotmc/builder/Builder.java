@@ -368,7 +368,11 @@ public class Builder
 
     public static int runProcess(File workDir, String... command) throws Exception
     {
-        final Process ps = new ProcessBuilder( command ).directory( workDir ).start();
+        ProcessBuilder pb = new ProcessBuilder( command );
+        pb.directory( workDir );
+        pb.environment().put( "JAVA_HOME", System.getProperty( "java.home" ) );
+
+        final Process ps = pb.start();
 
         new Thread( new StreamRedirector( ps.getInputStream(), System.out ) ).start();
         new Thread( new StreamRedirector( ps.getErrorStream(), System.err ) ).start();
