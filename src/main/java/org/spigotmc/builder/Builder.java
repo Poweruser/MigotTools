@@ -371,6 +371,10 @@ public class Builder
         ProcessBuilder pb = new ProcessBuilder( command );
         pb.directory( workDir );
         pb.environment().put( "JAVA_HOME", System.getProperty( "java.home" ) );
+        if ( !pb.environment().containsKey( "MAVEN_OPTS" ) )
+        {
+            pb.environment().put( "MAVEN_OPTS", "-Xmx1024M" );
+        }
 
         final Process ps = pb.start();
 
