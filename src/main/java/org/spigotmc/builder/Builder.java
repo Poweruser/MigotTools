@@ -7,8 +7,10 @@ import com.google.common.collect.Iterables;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
+import com.google.gson.Gson;
 import difflib.DiffUtils;
 import difflib.Patch;
 import java.io.BufferedOutputStream;
@@ -26,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -61,6 +64,7 @@ public class Builder
     private static boolean skipCompile;
     private static boolean generateSource;
     private static boolean generateDocs;
+    private static boolean dev;
 
     public static void main(String[] args) throws Exception
     {
@@ -85,6 +89,10 @@ public class Builder
             if ( "--generate-docs".equals( s ) )
             {
                 generateDocs = true;
+            }
+            if ( "--dev".equals( s ) )
+            {
+                dev = true;
             }
         }
 
@@ -169,12 +177,34 @@ public class Builder
         Git spigotGit = Git.open( spigot );
         Git buildGit = Git.open( buildData );
 
+        BuildInfo buildInfo = new BuildInfo( "Dev Build", "Development", new BuildInfo.Refs( "master", "master", "master", "master" ) );
+
         if ( !dontUpdate )
         {
-            pull( bukkitGit );
-            pull( craftBukkitGit );
-            pull( spigotGit );
-            pull( buildGit );
+            if ( !dev )
+            {
+                System.out.println( "Checking for latest version:" );
+
+                String verInfo;
+                try
+                {
+                    verInfo = get( "https://hub.spigotmc.org/versions/latest.json" );
+                } catch ( IOException ex )
+                {
+                    System.err.println( "Could not get latest version" );
+                    ex.printStackTrace();
+                    return;
+                }
+                System.out.println( "Found latest version" );
+                System.out.println( verInfo );
+
+                buildInfo = new Gson().fromJson( verInfo, BuildInfo.class );
+            }
+
+            pull( buildGit, buildInfo.getRefs().getBuildData() );
+            pull( bukkitGit, buildInfo.getRefs().getBukkit() );
+            pull( craftBukkitGit, buildInfo.getRefs().getCraftBukkit() );
+            pull( spigotGit, buildInfo.getRefs().getSpigot() );
         }
 
         File vanillaJar = new File( workDir, "minecraft_server." + MC_VERSION + ".jar" );
@@ -289,7 +319,7 @@ public class Builder
         craftBukkitGit.checkout().setCreateBranch( true ).setForce( true ).setName( "patched" ).call();
         craftBukkitGit.add().addFilepattern( "src/main/java/net/" ).call();
         craftBukkitGit.commit().setMessage( "CraftBukkit $ " + new Date() ).call();
-        craftBukkitGit.checkout().setName( "master" ).call();
+        craftBukkitGit.checkout().setName( buildInfo.getRefs().getCraftBukkit() ).call();
 
         FileUtils.moveDirectory( tmpNms, nmsDir );
 
@@ -349,6 +379,27 @@ public class Builder
         copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + MC_VERSION + ".jar" );
     }
 
+    public static final String get(String url) throws IOException
+    {
+        URLConnection con = new URL( url ).openConnection();
+        con.setConnectTimeout( 5000 );
+        con.setReadTimeout( 5000 );
+
+        InputStreamReader r = null;
+        try
+        {
+            r = new InputStreamReader( con.getInputStream() );
+
+            return CharStreams.toString( r );
+        } finally
+        {
+            if ( r != null )
+            {
+                r.close();
+            }
+        }
+    }
+
     public static void copyJar(String path, final String jarPrefix, String outJarName) throws Exception
     {
         File[] files = new File( path ).listFiles( new FilenameFilter()
@@ -367,19 +418,21 @@ public class Builder
         }
     }
 
-    public static void pull(Git repo) throws Exception
+    public static void pull(Git repo, String ref) throws Exception
     {
         System.out.println( "Pulling updates for " + repo.getRepository().getDirectory() );
 
         repo.reset().setRef( "origin/master" ).setMode( ResetCommand.ResetType.HARD ).call();
-        boolean result = repo.pull().call().isSuccessful();
+        repo.fetch().call();
 
-        if ( !result )
+        System.out.println( "Successfully fetched updates!" );
+
+        repo.checkout().setName( ref ).call();
+        if ( ref.equals( "master" ) )
         {
-            throw new RuntimeException( "Could not pull updates!" );
+            repo.reset().setRef( "origin/master" ).setMode( ResetCommand.ResetType.HARD ).call();
         }
-
-        System.out.println( "Successfully pulled updates!" );
+        System.out.println( "Checked out: " + ref );
     }
 
     public static int runProcess(File workDir, String... command) throws Exception
