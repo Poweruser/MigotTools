@@ -59,6 +59,8 @@ public class Builder
     public static final String MC_VERSION = "1.8";
     private static boolean dontUpdate;
     private static boolean skipCompile;
+    private static boolean generateSource;
+    private static boolean generateDocs;
 
     public static void main(String[] args) throws Exception
     {
@@ -75,6 +77,14 @@ public class Builder
             if ( "--skip-compile".endsWith( s ) )
             {
                 skipCompile = true;
+            }
+            if ( "--generate-source".equals( s ) )
+            {
+                generateSource = true;
+            }
+            if ( "--generate-docs".equals( s ) )
+            {
+                generateDocs = true;
             }
         }
 
@@ -300,6 +310,14 @@ public class Builder
         {
             System.out.println( "Compiling Bukkit" );
             runProcess( bukkit, "sh", mvn, "clean", "install" );
+            if ( generateDocs )
+            {
+                runProcess( bukkit, "sh", mvn, "javadoc:jar" );
+            }
+            if ( generateSource )
+            {
+                runProcess( bukkit, "sh", mvn, "source:jar" );
+            }
 
             System.out.println( "Compiling CraftBukkit" );
             runProcess( craftBukkit, "sh", mvn, "clean", "install" );
