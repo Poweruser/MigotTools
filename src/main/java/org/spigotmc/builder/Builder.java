@@ -100,7 +100,7 @@ public class Builder
 
         if ( Float.parseFloat( System.getProperty( "java.class.version" ) ) < 51.0 )
         {
-            System.err.println( "*** WARNING *** You are not using Java 7. Although this will work, it is highly discouraged due to the security issues present." );
+            System.err.println( "*** WARNING *** You are not using Java 7 or above. Although this will work, it is highly discouraged due to the security issues present." );
             System.err.println( "*** WARNING *** Use java -version to check your version and update as soon as possible." );
         }
 
