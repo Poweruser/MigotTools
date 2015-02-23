@@ -45,6 +45,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import joptsimple.OptionSpec;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -68,33 +72,25 @@ public class Builder
 
     public static void main(String[] args) throws Exception
     {
-        for ( String s : args )
+        OptionParser parser = new OptionParser();
+        OptionSpec<Void> disableCertFlag = parser.accepts( "disable-certificate-check" );
+        OptionSpec<Void> dontUpdateFlag = parser.accepts( "dont-update" );
+        OptionSpec<Void> skipCompileFlag = parser.accepts( "skip-compile" );
+        OptionSpec<Void> generateSourceFlag = parser.accepts( "generate-source" );
+        OptionSpec<Void> generateDocsFlag = parser.accepts( "generate-docs" );
+        OptionSpec<Void> devFlag = parser.accepts( "dev" );
+
+        OptionSet options = parser.parse( args );
+
+        if ( options.has( disableCertFlag ) )
         {
-            if ( "--disable-certificate-check".equals( s ) )
-            {
-                disableHttpsCertificateCheck();
-            }
-            if ( "--dont-update".equals( s ) )
-            {
-                dontUpdate = true;
-            }
-            if ( "--skip-compile".endsWith( s ) )
-            {
-                skipCompile = true;
-            }
-            if ( "--generate-source".equals( s ) )
-            {
-                generateSource = true;
-            }
-            if ( "--generate-docs".equals( s ) )
-            {
-                generateDocs = true;
-            }
-            if ( "--dev".equals( s ) )
-            {
-                dev = true;
-            }
+            disableHttpsCertificateCheck();
         }
+        dontUpdate = options.has( dontUpdateFlag );
+        skipCompile = options.has( skipCompileFlag );
+        generateSource = options.has( generateSourceFlag );
+        generateDocs = options.has( generateDocsFlag );
+        dev = options.has( devFlag );
 
         logOutput();
 
