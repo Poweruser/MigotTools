@@ -262,7 +262,7 @@ public class Builder
                 }
             } );
 
-            runProcess( CWD, "java", "-jar", "BuildData/bin/fernflower.jar", "-dgs=1", "-hdc=0", "-rbr=0", "-asc=1", clazzDir.getPath(), decompileDir.getPath() );
+            runProcess( CWD, "java", "-jar", "BuildData/bin/fernflower.jar", "-dgs=1", "-hdc=0", "-rbr=0", "-asc=1", "-udv=0", clazzDir.getPath(), decompileDir.getPath() );
         }
 
         System.out.println( "Applying CraftBukkit Patches" );
