@@ -72,6 +72,24 @@ public class Builder
 
     public static void main(String[] args) throws Exception
     {
+        // May be null
+        String buildVersion = Builder.class.getPackage().getImplementationVersion();
+        int buildNumber = -1;
+        if ( buildVersion != null )
+        {
+            String[] split = buildVersion.split( "-" );
+            if ( split.length == 4 )
+            {
+                try
+                {
+                    buildNumber = Integer.parseInt( split[3] );
+                } catch ( NumberFormatException ex )
+                {
+                }
+            }
+        }
+        System.out.println( "Loading BuildTools version: " + buildVersion + " (#" + buildNumber + ")" );
+
         OptionParser parser = new OptionParser();
         OptionSpec<Void> disableCertFlag = parser.accepts( "disable-certificate-check" );
         OptionSpec<Void> dontUpdateFlag = parser.accepts( "dont-update" );
@@ -172,7 +190,7 @@ public class Builder
         Git spigotGit = Git.open( spigot );
         Git buildGit = Git.open( buildData );
 
-        BuildInfo buildInfo = new BuildInfo( "Dev Build", "Development", new BuildInfo.Refs( "master", "master", "master", "master" ) );
+        BuildInfo buildInfo = new BuildInfo( "Dev Build", "Development", 0, new BuildInfo.Refs( "master", "master", "master", "master" ) );
 
         if ( !dontUpdate )
         {
@@ -194,6 +212,12 @@ public class Builder
                 System.out.println( verInfo );
 
                 buildInfo = new Gson().fromJson( verInfo, BuildInfo.class );
+
+                if ( buildNumber != -1 && buildInfo.getToolsVersion() != -1 && buildNumber < buildInfo.getToolsVersion() )
+                {
+                    System.err.println( "**** Your BuildTools is out of date and will not build the requested version. Please grab a new copy from http://www.spigotmc.org/" );
+                    System.exit( 1 );
+                }
             }
 
             pull( buildGit, buildInfo.getRefs().getBuildData() );
