@@ -12,6 +12,7 @@
     <description></description>
 
     <properties>
+        <build.number>unknown</build.number>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -66,6 +67,22 @@
         <finalName>${project.name}</finalName>
         <plugins>
             <plugin>
+                <groupId>net.md-5</groupId>
+                <artifactId>scriptus</artifactId>
+                <version>0.2</version>
+                <configuration>
+                    <format>git-${project.name}-%s-${build.number}</format>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>describe</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
@@ -81,7 +98,8 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Main-Class>org.spigotmc.builder.Builder</Main-Class> 
+                            <Main-Class>org.spigotmc.builder.Builder</Main-Class>
+                            <Implementation-Version>${describe}</Implementation-Version>
                         </manifestEntries>
                     </archive>
                 </configuration>
