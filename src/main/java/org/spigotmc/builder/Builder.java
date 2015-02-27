@@ -422,7 +422,7 @@ public class Builder
 
         System.out.println( "Successfully fetched updates!" );
 
-        repo.reset().setRef( ref ).setMode( ResetCommand.ResetType.HARD).call();
+        repo.reset().setRef( ref ).setMode( ResetCommand.ResetType.HARD ).call();
         if ( ref.equals( "master" ) )
         {
             repo.reset().setRef( "origin/master" ).setMode( ResetCommand.ResetType.HARD ).call();
