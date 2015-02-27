@@ -264,7 +264,7 @@ public class Builder
             File clMappedJar = new File( finalMappedJar + "-cl" );
             File mMappedJar = new File( finalMappedJar + "-m" );
 
-            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource.jar", "-i", vanillaJar.getPath(), "-m", "BuildData/mappings/" + versionInfo.getClassMappings(), "-o", clMappedJar.getPath() );
+            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource-2.jar", "map", "-i", vanillaJar.getPath(), "-m", "BuildData/mappings/" + versionInfo.getClassMappings(), "-o", clMappedJar.getPath() );
 
             runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource-2.jar", "map", "-i", clMappedJar.getPath(),
                     "-m", "BuildData/mappings/" + versionInfo.getMemberMappings(), "-o", mMappedJar.getPath() );
