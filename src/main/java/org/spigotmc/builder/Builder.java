@@ -63,7 +63,6 @@ public class Builder
     public static final String LOG_FILE = "BuildTools.log.txt";
     public static final boolean IS_WINDOWS = System.getProperty( "os.name" ).startsWith( "Windows" );
     public static final File CWD = new File( "." );
-    public static final String MC_VERSION = "1.8";
     private static boolean dontUpdate;
     private static boolean skipCompile;
     private static boolean generateSource;
@@ -226,17 +225,28 @@ public class Builder
             pull( spigotGit, buildInfo.getRefs().getSpigot() );
         }
 
-        File vanillaJar = new File( workDir, "minecraft_server." + MC_VERSION + ".jar" );
+        VersionInfo versionInfo = new Gson().fromJson(
+                Resources.toString( new File( "BuildData/info.json" ).toURI().toURL(), Charsets.UTF_8 ),
+                VersionInfo.class
+        );
+        // Default to 1.8 builds.
+        if ( versionInfo == null )
+        {
+            versionInfo = new VersionInfo( "1.8", "bukkit-1.8.at", "bukkit-1.8-cl.csrg", "bukkit-1.8-members.csrg", "package.srg" );
+        }
+        System.out.println( "Attempting to build Minecraft with details: " + versionInfo );
+
+        File vanillaJar = new File( workDir, "minecraft_server." + versionInfo.getMinecraftVersion() + ".jar" );
         if ( !vanillaJar.exists() )
         {
-            download( String.format( "https://s3.amazonaws.com/Minecraft.Download/versions/%1$s/minecraft_server.%1$s.jar", MC_VERSION ), vanillaJar );
+            download( String.format( "https://s3.amazonaws.com/Minecraft.Download/versions/%1$s/minecraft_server.%1$s.jar", versionInfo.getMinecraftVersion() ), vanillaJar );
         }
 
         Iterable<RevCommit> mappings = buildGit.log()
-                .addPath( "mappings/bukkit-1.8.at" )
-                .addPath( "mappings/bukkit-1.8-cl.csrg" )
-                .addPath( "mappings/bukkit-1.8-members.csrg" )
-                .addPath( "mappings/package.srg" )
+                .addPath( "mappings/" + versionInfo.getAccessTransforms() )
+                .addPath( "mappings/" + versionInfo.getClassMappings() )
+                .addPath( "mappings/" + versionInfo.getMemberMappings() )
+                .addPath( "mappings/" + versionInfo.getPackageMappings() )
                 .setMaxCount( 1 ).call();
 
         Hasher mappingsHash = Hashing.md5().newHasher();
@@ -254,17 +264,17 @@ public class Builder
             File clMappedJar = new File( finalMappedJar + "-cl" );
             File mMappedJar = new File( finalMappedJar + "-m" );
 
-            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource-2.jar", "map", "-i", vanillaJar.getPath(), "-m", "BuildData/mappings/bukkit-1.8-cl.csrg", "-o", clMappedJar.getPath() );
+            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource-2.jar", "map", "-i", vanillaJar.getPath(), "-m", "BuildData/mappings/" + versionInfo.getClassMappings(), "-o", clMappedJar.getPath() );
 
             runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource-2.jar", "map", "-i", clMappedJar.getPath(),
-                    "-m", "BuildData/mappings/bukkit-1.8-members.csrg", "-o", mMappedJar.getPath() );
+                    "-m", "BuildData/mappings/" + versionInfo.getMemberMappings(), "-o", mMappedJar.getPath() );
 
-            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource.jar", "-i", mMappedJar.getPath(), "--access-transformer", "BuildData/mappings/bukkit-1.8.at",
-                    "-m", "BuildData/mappings/package.srg", "-o", finalMappedJar.getPath() );
+            runProcess( CWD, "java", "-jar", "BuildData/bin/SpecialSource.jar", "-i", mMappedJar.getPath(), "--access-transformer", "BuildData/mappings/" + versionInfo.getAccessTransforms(),
+                    "-m", "BuildData/mappings/" + versionInfo.getPackageMappings(), "-o", finalMappedJar.getPath() );
         }
 
         runProcess( CWD, "sh", mvn, "install:install-file", "-Dfile=" + finalMappedJar, "-Dpackaging=jar", "-DgroupId=org.spigotmc",
-                "-DartifactId=minecraft-server", "-Dversion=1.8-SNAPSHOT" );
+                "-DartifactId=minecraft-server", "-Dversion=" + versionInfo.getMinecraftVersion() + "-SNAPSHOT" );
 
         File decompileDir = new File( workDir, "decompile-" + mappingsVersion );
         if ( !decompileDir.exists() )
@@ -394,8 +404,8 @@ public class Builder
             System.out.println( " " );
         }
         System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
-        copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + MC_VERSION + ".jar" );
-        copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + MC_VERSION + ".jar" );
+        copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" );
+        copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + versionInfo.getMinecraftVersion() + ".jar" );
     }
 
     public static final String get(String url) throws IOException
