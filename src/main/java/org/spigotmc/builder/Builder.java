@@ -96,6 +96,7 @@ public class Builder
         OptionSpec<Void> generateSourceFlag = parser.accepts( "generate-source" );
         OptionSpec<Void> generateDocsFlag = parser.accepts( "generate-docs" );
         OptionSpec<Void> devFlag = parser.accepts( "dev" );
+        OptionSpec<String> jenkinsVersion = parser.accepts( "rev" ).withRequiredArg().defaultsTo( "latest" );
 
         OptionSet options = parser.parse( args );
 
@@ -195,19 +196,20 @@ public class Builder
         {
             if ( !dev )
             {
-                System.out.println( "Checking for latest version:" );
+                String askedVersion = options.valueOf( jenkinsVersion );
+                System.out.println( "Attempting to build version: '" + askedVersion + "' use --rev <version> to override" );
 
                 String verInfo;
                 try
                 {
-                    verInfo = get( "https://hub.spigotmc.org/versions/latest.json" );
+                    verInfo = get( "https://hub.spigotmc.org/versions/" + askedVersion + ".json" );
                 } catch ( IOException ex )
                 {
-                    System.err.println( "Could not get latest version" );
+                    System.err.println( "Could not get version " + askedVersion + " does it exist? Try another version or use 'latest'" );
                     ex.printStackTrace();
                     return;
                 }
-                System.out.println( "Found latest version" );
+                System.out.println( "Found version" );
                 System.out.println( verInfo );
 
                 buildInfo = new Gson().fromJson( verInfo, BuildInfo.class );
