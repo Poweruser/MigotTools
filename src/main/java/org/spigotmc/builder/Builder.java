@@ -405,9 +405,13 @@ public class Builder
         {
             System.out.println( " " );
         }
-        System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
-        copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" );
-        copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + versionInfo.getMinecraftVersion() + ".jar" );
+
+        if ( !skipCompile )
+        {
+            System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
+            copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" );
+            copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + versionInfo.getMinecraftVersion() + ".jar" );
+        }
     }
 
     public static final String get(String url) throws IOException
