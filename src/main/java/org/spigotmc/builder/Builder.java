@@ -388,10 +388,10 @@ public class Builder
         {
             runProcess( spigot, "bash", "applyPatches.sh" );
             System.out.println( "*** Spigot patches applied!" );
-            System.out.println( "Compiling Spigot & Spigot-API" );
 
             if ( !skipCompile )
             {
+                System.out.println( "Compiling Spigot & Spigot-API" );
                 runProcess( spigot, "sh", mvn, "clean", "install" );
             }
         } catch ( Exception ex )
