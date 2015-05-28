@@ -171,7 +171,7 @@ public class Builder
             clone( "https://hub.spigotmc.org/stash/scm/spigot/builddata.git", buildData );
         }
 
-        File maven = new File( "apache-maven-3.2.3" );
+        File maven = new File( "apache-maven-3.2.5" );
         if ( !maven.exists() )
         {
             System.out.println( "Maven does not exist, downloading. Please wait." );
@@ -179,7 +179,7 @@ public class Builder
             File mvnTemp = new File( "mvn.zip" );
             mvnTemp.deleteOnExit();
 
-            download( "http://static.spigotmc.org/maven/apache-maven-3.2.3-bin.zip", mvnTemp );
+            download( "http://static.spigotmc.org/maven/apache-maven-3.2.5-bin.zip", mvnTemp );
             unzip( mvnTemp, new File( "." ) );
         }
 
