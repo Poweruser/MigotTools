@@ -171,16 +171,21 @@ public class Builder
             clone( "https://hub.spigotmc.org/stash/scm/spigot/builddata.git", buildData );
         }
 
-        File maven = new File( "apache-maven-3.2.5" );
+        File maven = new File( System.getenv( "M2_HOME" ) );
         if ( !maven.exists() )
         {
-            System.out.println( "Maven does not exist, downloading. Please wait." );
+            maven = new File( "apache-maven-3.2.5" );
 
-            File mvnTemp = new File( "mvn.zip" );
-            mvnTemp.deleteOnExit();
+            if ( !maven.exists() )
+            {
+                System.out.println( "Maven does not exist, downloading. Please wait." );
 
-            download( "http://static.spigotmc.org/maven/apache-maven-3.2.5-bin.zip", mvnTemp );
-            unzip( mvnTemp, new File( "." ) );
+                File mvnTemp = new File( "mvn.zip" );
+                mvnTemp.deleteOnExit();
+
+                download( "http://static.spigotmc.org/maven/apache-maven-3.2.5-bin.zip", mvnTemp );
+                unzip( mvnTemp, new File( "." ) );
+            }
         }
 
         String mvn = maven.getAbsolutePath() + "/bin/mvn";
