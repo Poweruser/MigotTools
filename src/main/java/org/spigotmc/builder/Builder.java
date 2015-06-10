@@ -171,8 +171,9 @@ public class Builder
             clone( "https://hub.spigotmc.org/stash/scm/spigot/builddata.git", buildData );
         }
 
-        File maven = new File( System.getenv( "M2_HOME" ) );
-        if ( !maven.exists() )
+        File maven;
+        String m2Home = System.getenv( "M2_HOME" );
+        if ( m2Home == null || !(maven = new File(m2Home)).exists() )
         {
             maven = new File( "apache-maven-3.2.5" );
 
