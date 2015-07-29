@@ -13,4 +13,5 @@ public class VersionInfo
     private String classMappings;
     private String memberMappings;
     private String packageMappings;
+    private String minecraftHash;
 }

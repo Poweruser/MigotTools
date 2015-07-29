@@ -173,7 +173,7 @@ public class Builder
 
         File maven;
         String m2Home = System.getenv( "M2_HOME" );
-        if ( m2Home == null || !(maven = new File(m2Home)).exists() )
+        if ( m2Home == null || !( maven = new File( m2Home ) ).exists() )
         {
             maven = new File( "apache-maven-3.2.5" );
 
@@ -240,14 +240,19 @@ public class Builder
         // Default to 1.8 builds.
         if ( versionInfo == null )
         {
-            versionInfo = new VersionInfo( "1.8", "bukkit-1.8.at", "bukkit-1.8-cl.csrg", "bukkit-1.8-members.csrg", "package.srg" );
+            versionInfo = new VersionInfo( "1.8", "bukkit-1.8.at", "bukkit-1.8-cl.csrg", "bukkit-1.8-members.csrg", "package.srg", null );
         }
         System.out.println( "Attempting to build Minecraft with details: " + versionInfo );
 
         File vanillaJar = new File( workDir, "minecraft_server." + versionInfo.getMinecraftVersion() + ".jar" );
-        if ( !vanillaJar.exists() )
+        if ( !vanillaJar.exists() || !checkHash( vanillaJar, versionInfo ) )
         {
             download( String.format( "https://s3.amazonaws.com/Minecraft.Download/versions/%1$s/minecraft_server.%1$s.jar", versionInfo.getMinecraftVersion() ), vanillaJar );
+        }
+        if ( !checkHash( vanillaJar, versionInfo ) )
+        {
+            System.err.println( "**** Could not download clean Minecraft jar, giving up." );
+            return;
         }
 
         Iterable<RevCommit> mappings = buildGit.log()
@@ -417,6 +422,20 @@ public class Builder
             System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
             copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" );
             copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + versionInfo.getMinecraftVersion() + ".jar" );
+        }
+    }
+
+    private static boolean checkHash(File vanillaJar, VersionInfo versionInfo) throws IOException
+    {
+        String hash = Files.hash( vanillaJar, Hashing.md5() ).toString();
+        if ( !dev && versionInfo.getMinecraftHash() != null && !hash.equals( versionInfo.getMinecraftHash() ) )
+        {
+            System.err.println( "**** Warning, Minecraft jar hash of " + hash + " does not match stored hash of " + versionInfo.getMinecraftHash() );
+            return false;
+        } else
+        {
+            System.out.println( "Found good Minecraft hash (" + hash + ")" );
+            return true;
         }
     }
 
