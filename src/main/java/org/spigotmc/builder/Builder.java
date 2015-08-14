@@ -60,7 +60,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 public class Builder
 {
 
-    public static final String LOG_FILE = "BuildTools.log.txt";
+    public static final String LOG_FILE = "MigotTools.log.txt";
     public static final boolean IS_WINDOWS = System.getProperty( "os.name" ).startsWith( "Windows" );
     public static final File CWD = new File( "." );
     private static boolean dontUpdate;
@@ -133,7 +133,7 @@ public class Builder
         } catch ( Exception ex )
         {
             System.out.println( "Git name not set, setting it to default value." );
-            runProcess( CWD, "git", "config", "--global", "user.name", "BuildTools" );
+            runProcess( CWD, "git", "config", "--global", "user.name", "MigotTools" );
         }
         try
         {
@@ -159,10 +159,10 @@ public class Builder
             clone( "https://hub.spigotmc.org/stash/scm/spigot/craftbukkit.git", craftBukkit );
         }
 
-        File spigot = new File( "Spigot" );
-        if ( !spigot.exists() )
+        File migot = new File( "Migot" );
+        if ( !migot.exists() )
         {
-            clone( "https://hub.spigotmc.org/stash/scm/spigot/spigot.git", spigot );
+            clone( "https://github.com/Poweruser/Migot.git", migot );
         }
 
         File buildData = new File( "BuildData" );
@@ -193,7 +193,7 @@ public class Builder
 
         Git bukkitGit = Git.open( bukkit );
         Git craftBukkitGit = Git.open( craftBukkit );
-        Git spigotGit = Git.open( spigot );
+        Git migotGit = Git.open( migot );
         Git buildGit = Git.open( buildData );
 
         BuildInfo buildInfo = new BuildInfo( "Dev Build", "Development", 0, new BuildInfo.Refs( "master", "master", "master", "master" ) );
@@ -208,7 +208,7 @@ public class Builder
                 String verInfo;
                 try
                 {
-                    verInfo = get( "https://hub.spigotmc.org/versions/" + askedVersion + ".json" );
+                    verInfo = get( "https://github.com/Poweruser/Migot/wiki/versions/" + askedVersion + ".json" );
                 } catch ( IOException ex )
                 {
                     System.err.println( "Could not get version " + askedVersion + " does it exist? Try another version or use 'latest'" );
@@ -230,7 +230,7 @@ public class Builder
             pull( buildGit, buildInfo.getRefs().getBuildData() );
             pull( bukkitGit, buildInfo.getRefs().getBukkit() );
             pull( craftBukkitGit, buildInfo.getRefs().getCraftBukkit() );
-            pull( spigotGit, buildInfo.getRefs().getSpigot() );
+            pull( migotGit, buildInfo.getRefs().getMigot() );
         }
 
         VersionInfo versionInfo = new Gson().fromJson(
@@ -365,15 +365,15 @@ public class Builder
 
         FileUtils.moveDirectory( tmpNms, nmsDir );
 
-        File spigotApi = new File( spigot, "Bukkit" );
+        File spigotApi = new File( migot, "Bukkit" );
         if ( !spigotApi.exists() )
         {
             clone( "file://" + bukkit.getAbsolutePath(), spigotApi );
         }
-        File spigotServer = new File( spigot, "CraftBukkit" );
-        if ( !spigotServer.exists() )
+        File migotServer = new File( migot, "CraftBukkit" );
+        if ( !migotServer.exists() )
         {
-            clone( "file://" + craftBukkit.getAbsolutePath(), spigotServer );
+            clone( "file://" + craftBukkit.getAbsolutePath(), migotServer );
         }
 
         // Git spigotApiGit = Git.open( spigotApi );
@@ -397,17 +397,17 @@ public class Builder
 
         try
         {
-            runProcess( spigot, "bash", "applyPatches.sh" );
-            System.out.println( "*** Spigot patches applied!" );
+            runProcess( migot, "bash", "applyPatches.sh" );
+            System.out.println( "*** Spigot and Migot patches applied!" );
 
             if ( !skipCompile )
             {
-                System.out.println( "Compiling Spigot & Spigot-API" );
-                runProcess( spigot, "sh", mvn, "clean", "install" );
+                System.out.println( "Compiling Migot & Spigot-API" );
+                runProcess( migot, "sh", mvn, "clean", "install" );
             }
         } catch ( Exception ex )
         {
-            System.err.println( "Error compiling Spigot, are you running this jar via msysgit?" );
+            System.err.println( "Error compiling Migot, are you running this jar via msysgit?" );
             ex.printStackTrace();
             System.exit( 1 );
         }
@@ -421,7 +421,7 @@ public class Builder
         {
             System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
             copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" );
-            copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + versionInfo.getMinecraftVersion() + ".jar" );
+            copyJar( "Migot/Migot-Server/target", "migot", "migot-" + versionInfo.getMinecraftVersion() + ".jar" );
         }
     }
 

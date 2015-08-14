@@ -21,6 +21,6 @@ public class BuildInfo
         private String BuildData;
         private String Bukkit;
         private String CraftBukkit;
-        private String Spigot;
+        private String Migot;
     }
 }

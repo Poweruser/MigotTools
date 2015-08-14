@@ -3,12 +3,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.spigotmc</groupId>
-    <artifactId>builder</artifactId>
+    <groupId>de.minetick</groupId>
+    <artifactId>MigotTools</artifactId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
 
-    <name>BuildTools</name>
+    <name>MigotTools</name>
     <description></description>
 
     <properties>
